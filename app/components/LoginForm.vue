@@ -1,5 +1,4 @@
 <script setup>
-const router = useRouter();
 const token = useCookie("token");
 
 const firstName = useState("first");
@@ -7,12 +6,12 @@ const lastName = useState("last");
 
 const loading = useState("loading", () => false);
 
-function submit(event) {
+async function submit(event) {
   loading.value = true;
 
   token.value = "3ervejfko23k23m0fdi9-k09d3iw2mf0ij2f0j30odkok20odk02";
-  setTimeout(() => {
-    router.push("/");
+  await setTimeout(async () => {
+    await navigateTo("/");
     loading.value = false;
   }, 3000);
 }

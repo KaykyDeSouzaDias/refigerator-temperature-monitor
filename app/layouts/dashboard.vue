@@ -1,60 +1,47 @@
 <script setup>
-import { ref } from "vue";
-import { Menu, X } from "lucide-vue-next";
+import { Menu, X, Cctv, ChartLine } from "lucide-vue-next";
 
-const drawer = ref(true);
+const router = useRouter();
 
+const drawer = useState("drawerOpened", () => true);
 const items = ref([
   {
-    title: "Dashboard",
-    prependIcon: "mdi-view-dashboard-outline",
-    link: true,
+    id: 1,
+    title: "Monitoramento",
+    prependIcon: ChartLine,
+    page: "/",
   },
   {
-    title: "Team",
-    prependIcon: "mdi-account-group",
-    link: true,
-  },
-  {
-    title: "Projects",
-    prependIcon: "mdi-briefcase-outline",
-    link: true,
-  },
-  {
-    title: "Calendar",
-    prependIcon: "mdi-calendar",
-    link: true,
-  },
-  {
-    title: "Reports",
-    prependIcon: "mdi-file-chart-outline",
-    link: true,
+    id: 2,
+    title: "Aparelhos",
+    prependIcon: Cctv,
+    page: "/aparelhos",
   },
 ]);
+const selected = ref([router.currentRoute.value.fullPath]);
 </script>
 
 <template>
   <v-layout>
     <v-navigation-drawer v-model="drawer">
-      <v-list density="compact" item-props :items="items" nav />
-
-      <template #append>
+      <v-list density="comfortable" v-model:selected="selected" nav>
         <v-list-item
-          class="ma-2"
-          link
-          nav
-          prepend-icon="mdi-cog-outline"
-          title="Settings"
-        />
-      </template>
+          v-for="(item, i) in items"
+          :key="i"
+          color="green"
+          :value="item.page"
+          @click="async () => await navigateTo(item.page)"
+        >
+          <template v-slot:prepend>
+            <v-icon :icon="item.prependIcon"></v-icon>
+          </template>
+
+          <v-list-item-title v-text="item.title"></v-list-item-title>
+        </v-list-item>
+      </v-list>
     </v-navigation-drawer>
 
     <v-app-bar border="b" class="ps-4" flat>
-      <v-app-bar-nav-icon
-        v-if="$vuetify.display.smAndDown"
-        @click="drawer = !drawer"
-      />
-
       <div class="flex items-center gap-2">
         <v-icon-btn @click="drawer = !drawer">
           <Menu v-if="!drawer" :size="22" />
@@ -87,13 +74,7 @@ const items = ref([
 
     <v-main>
       <div class="pa-4">
-        <v-sheet
-          border="dashed md"
-          color="surface-light"
-          height="500"
-          rounded="lg"
-          width="100%"
-        />
+        <slot />
       </div>
     </v-main>
   </v-layout>
