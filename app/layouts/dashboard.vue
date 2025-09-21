@@ -1,61 +1,100 @@
-<script>
-  export default {
-    data () {
-      return {
-        drawer: true,
-        rail: true,
-      }
-    },
-  }
+<script setup>
+import { ref } from "vue";
+import { Menu, X } from "lucide-vue-next";
+
+const drawer = ref(true);
+
+const items = ref([
+  {
+    title: "Dashboard",
+    prependIcon: "mdi-view-dashboard-outline",
+    link: true,
+  },
+  {
+    title: "Team",
+    prependIcon: "mdi-account-group",
+    link: true,
+  },
+  {
+    title: "Projects",
+    prependIcon: "mdi-briefcase-outline",
+    link: true,
+  },
+  {
+    title: "Calendar",
+    prependIcon: "mdi-calendar",
+    link: true,
+  },
+  {
+    title: "Reports",
+    prependIcon: "mdi-file-chart-outline",
+    link: true,
+  },
+]);
 </script>
 
 <template>
-  <v-card>
-    <v-layout>
-      <v-navigation-drawer
-        v-model="drawer"
-        :rail="rail"
-        permanent
-        @click="rail = false"
-      >
-        <v-list>
-          <v-list-item
-            prepend-avatar="https://randomuser.me/api/portraits/men/85.jpg"
-            title="John Leider"
-          >
-            <template v-slot:append>
-              <v-btn
-                icon="mdi-chevron-left"
-                variant="text"
-                @click.stop="rail = !rail"
-              ></v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
+  <v-layout>
+    <v-navigation-drawer v-model="drawer">
+      <v-list density="compact" item-props :items="items" nav />
 
-        <v-divider></v-divider>
+      <template #append>
+        <v-list-item
+          class="ma-2"
+          link
+          nav
+          prepend-icon="mdi-cog-outline"
+          title="Settings"
+        />
+      </template>
+    </v-navigation-drawer>
 
-        <v-list density="compact" nav>
-          <v-list-item
-            prepend-icon="mdi-home-city"
-            title="Home"
-            value="home"
-          ></v-list-item>
-          <v-list-item
-            prepend-icon="mdi-account"
-            title="My Account"
-            value="account"
-          ></v-list-item>
-          <v-list-item
-            prepend-icon="mdi-account-group-outline"
-            title="Users"
-            value="users"
-          ></v-list-item>
-        </v-list>
-      </v-navigation-drawer>
-      <v-main style="height: 250px">
-        <slot />
-      </v-main>
-    </v-layout>
-  </v-card>
+    <v-app-bar border="b" class="ps-4" flat>
+      <v-app-bar-nav-icon
+        v-if="$vuetify.display.smAndDown"
+        @click="drawer = !drawer"
+      />
+
+      <div class="flex items-center gap-2">
+        <v-icon-btn @click="drawer = !drawer">
+          <Menu v-if="!drawer" :size="22" />
+          <X v-else :size="22" />
+        </v-icon-btn>
+      </div>
+
+      <template #append>
+        <v-btn class="text-none me-2" height="48" icon slim>
+          <v-avatar
+            color="surface-light"
+            image="https://cdn.vuetifyjs.com/images/john.png"
+            size="32"
+          />
+
+          <v-menu activator="parent">
+            <v-list density="compact" nav>
+              <v-list-item
+                append-icon="mdi-cog-outline"
+                link
+                title="Settings"
+              />
+
+              <v-list-item append-icon="mdi-logout" link title="Logout" />
+            </v-list>
+          </v-menu>
+        </v-btn>
+      </template>
+    </v-app-bar>
+
+    <v-main>
+      <div class="pa-4">
+        <v-sheet
+          border="dashed md"
+          color="surface-light"
+          height="500"
+          rounded="lg"
+          width="100%"
+        />
+      </div>
+    </v-main>
+  </v-layout>
 </template>
