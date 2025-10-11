@@ -68,11 +68,7 @@ async function reset() {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <div class="h-[80px] flex items-center">
-      <h1 class="font-[Inter] font-semibold text-5xl">Aparelhos</h1>
-    </div>
-
+  <PageStructure title="Aparelhos">
     <v-sheet border rounded class="pa-4">
       <div class="flex flex-col gap-4">
         <div class="flex items-center gap-4">
@@ -139,5 +135,5 @@ async function reset() {
         </v-sheet>
       </div>
     </v-sheet>
-  </div>
+  </PageStructure>
 </template>
