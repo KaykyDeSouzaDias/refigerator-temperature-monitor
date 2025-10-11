@@ -26,9 +26,8 @@ const selectedDevices = useState("selected", () => []);
 </script>
 
 <template>
-  <div v-if="deviceList" class="flex flex-col gap-4">
+  <div v-if="deviceList.length > 0" class="flex flex-col gap-4">
     <div class="flex items-center justify-start">
-      {{ deviceList }}
       <v-select
         multiple
         chips
@@ -120,5 +119,12 @@ const selectedDevices = useState("selected", () => []);
         </div>
       </v-card>
     </div>
+  </div>
+  <div v-else class="flex items-center justify-center h-screen">
+    <v-empty-state
+      icon="mdi-magnify"
+      text="Tente filtrar novamente ou entre em contato com o seu administrador."
+      title="Nada foi encontrado"
+    ></v-empty-state>
   </div>
 </template>
