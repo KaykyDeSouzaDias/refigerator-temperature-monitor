@@ -5,8 +5,9 @@ definePageMeta({
   layout: "dashboard",
 });
 
+const { data, pending, error, refresh } = await useGetAllDevice();
+
 const books = useState("books", () => []);
-const initialValues = useState("initialValues");
 
 const headers = ref([
   { title: "Título", key: "title", align: "start" },
@@ -15,29 +16,17 @@ const headers = ref([
   { title: "Actions", key: "actions", align: "end", sortable: false },
 ]);
 
-const dialog = useState("dialog", () => false);
+watch(data, (newVal) => {
+  books.value = newVal;
+});
 
-function add() {
-  initialValues.value = undefined;
-  dialog.value = true;
-}
-function edit(id) {
-  const found = books.value.find((book) => book.id === id);
-  initialValues.value = { ...found };
-  dialog.value = true;
-}
-function remove(id) {
-  books.value = books.value.filter((book) => book.id !== id);
-}
-function save(form, isEditing) {
-  if (isEditing) {
-    const index = books.value.findIndex((book) => book.id === form.id);
-    books.value[index] = { ...form };
-  } else {
-    form.id = books.value.length + 1;
-    books.value.push({ ...form });
-  }
-  dialog.value = false;
+async function reset() {
+  await fetch(
+    `https://api.thingspeak.com/channels/3100146/feeds.json?api_key=PTRQOAVX4RPVEOFU`,
+    {
+      method: "DELETE",
+    }
+  );
 }
 </script>
 
@@ -115,12 +104,4 @@ function save(form, isEditing) {
       </template>
     </v-data-table>
   </v-sheet>
-
-  <v-dialog v-model="dialog" max-width="500">
-    <DeviceForm
-      :initialValues="initialValues"
-      :onSubmit="save"
-      :onCancel="(value) => (dialog = value)"
-    />
-  </v-dialog>
 </template>

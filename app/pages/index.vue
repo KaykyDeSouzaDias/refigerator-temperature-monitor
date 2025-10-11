@@ -9,21 +9,26 @@ definePageMeta({
   layout: "dashboard",
 });
 
+const { data, pending, error, refresh } = await useGetAllDevice();
+
+const deviceList = computed(() => data.value);
+
 const selectedDevices = useState("selected", () => []);
-const deviceList = ref([
-  {
-    nome: "Aparelho 01",
-    codigo: "jo9ko3d4i39krkd",
-    localizacao: "Niterói",
-    temperatura: 10,
-    temperaturaIdeal: 5,
-  },
-]);
+// const deviceList = ref([
+//   {
+//     nome: "Aparelho 01",
+//     codigo: "jo9ko3d4i39krkd",
+//     localizacao: "Niterói",
+//     temperatura: 10,
+//     temperaturaIdeal: 5,
+//   },
+// ]);
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div v-if="deviceList" class="flex flex-col gap-4">
     <div class="flex items-center justify-start">
+      {{ deviceList }}
       <v-select
         multiple
         chips
@@ -33,8 +38,8 @@ const deviceList = ref([
         :items="
           deviceList.map((device) => {
             return {
-              title: device.nome,
-              subtitle: device.codigo,
+              title: device.name,
+              subtitle: device.code,
             };
           })
         "
@@ -48,7 +53,7 @@ const deviceList = ref([
     <div class="w-full flex gap-4">
       <v-card
         v-for="(item, index) in deviceList.filter((device) =>
-          selectedDevices.includes(device.codigo)
+          selectedDevices.includes(device.code)
         )"
         :key="index"
         class="w-[50%]"
@@ -57,11 +62,11 @@ const deviceList = ref([
         <v-card-item>
           <div class="flex items-center justify-between">
             <div class="flex flex-col">
-              <v-card-title>{{ item.nome }}</v-card-title>
-              <v-card-subtitle>{{ item.codigo }}</v-card-subtitle>
+              <v-card-title>{{ item.name }}</v-card-title>
+              <v-card-subtitle>{{ item.code }}</v-card-subtitle>
             </div>
 
-            <v-chip :text="item.localizacao"></v-chip>
+            <v-chip :text="item.location"></v-chip>
           </div>
         </v-card-item>
 
