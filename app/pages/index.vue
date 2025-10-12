@@ -96,7 +96,7 @@ const deviceList = ref([
     field2: "Aparelho 09",
     field3: "gh5j4k3l2m",
     field4: "Vitória",
-    field5: 32.0,
+    field5: 20.0,
     field6: 27.0,
     field7: 3.0, // fora da margem (ALERTA)
   },
@@ -184,8 +184,10 @@ const deviceList = ref([
 
               <v-chip
                 :color="
-                  item.field5 > item.field6 || item.field5 < item.field6
+                  Math.abs(item.field5 - item.field6) > item.field7
                     ? 'red'
+                    : item.field5 !== item.field6
+                    ? 'amber'
                     : 'green'
                 "
                 class="flex items-center gap-1"
@@ -204,7 +206,38 @@ const deviceList = ref([
             </div>
           </v-card-item>
 
-          <v-divider class="my-0" />
+          <v-divider class="mb-0" />
+          <div
+            v-if="item.field5 !== item.field6"
+            :class="`flex items-center justify-center pa-1 ${
+              Math.abs(item.field5 - item.field6) > item.field7
+                ? 'bg-red-500'
+                : 'bg-amber-500'
+            }`"
+          >
+            <span
+              v-if="Math.abs(item.field5 - item.field6) > item.field7"
+              class="text-sm text-white"
+            >
+              {{
+                item.field5 > item.field6
+                  ? "Temperatura muito acima!"
+                  : "Temperatura muito abaixo!"
+              }}
+            </span>
+            <span
+              v-else-if="item.field5 > item.field6"
+              class="text-sm text-white"
+            >
+              Temperatura acima, mas dentro da margem!
+            </span>
+            <span
+              v-else-if="item.field5 < item.field6"
+              class="text-sm text-white"
+            >
+              Temperatura abaixo, porém dentro da margem!
+            </span>
+          </div>
 
           <div class="pa-4">
             <!-- <v-sheet
