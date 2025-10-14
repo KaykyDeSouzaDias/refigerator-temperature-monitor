@@ -1,4 +1,5 @@
 <script setup>
+import { ref, computed, nextTick } from "vue";
 import {
   Thermometer,
   ThermometerSnowflake,
@@ -7,6 +8,20 @@ import {
   LayoutGrid,
   Rows3,
 } from "lucide-vue-next";
+import * as Chart from "chart.js";
+
+// Register Chart.js components
+Chart.Chart.register(
+  Chart.LineController,
+  Chart.LineElement,
+  Chart.PointElement,
+  Chart.LinearScale,
+  Chart.CategoryScale,
+  Chart.Title,
+  Chart.Tooltip,
+  Chart.Legend,
+  Chart.Filler
+);
 
 definePageMeta({
   layout: "dashboard",
@@ -16,8 +31,16 @@ const { data, pending, error, refresh } = await useGetAllDevice();
 
 // const deviceList = computed(() => data.value);
 const gridView = useState("gridView", () => "grid");
+const chartInstances = ref({});
 
 const selectedDevices = useState("selected", () => []);
+const selectAllDevices = computed(() => {
+  return selectedDevices.value.length === visibleDevices.value.length;
+});
+const selectSomeDevices = computed(() => {
+  return selectedDevices.value.length > 0;
+});
+
 const deviceList = ref([
   // --- Aparelho 01 ---
   {
@@ -77,7 +100,7 @@ const deviceList = ref([
     field2: "Aparelho 02",
     field3: "pl2o9x8z7b",
     field4: "Rio de Janeiro",
-    field5: 27.5,
+    field5: 26.0,
     field6: 26.0,
     field7: 1.5,
     created_at: "2025-10-12T18:35:10Z",
@@ -342,28 +365,155 @@ const deviceList = ref([
 
 const groupedDevices = computed(() => {
   const map = {};
-
   for (const item of deviceList.value) {
-    const id = item.field1; // group by field1 (device id)
-
-    if (!map[id]) {
-      map[id] = [];
-    }
-
+    const id = item.field1;
+    if (!map[id]) map[id] = [];
     map[id].push(item);
   }
-
-  // sorting each group by creation date/hour
   for (const id in map) {
-    map[id].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    map[id].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
   }
-
   return Object.values(map);
 });
 
 const visibleDevices = computed(() => {
-  return groupedDevices.value.map((device) => device[0]);
+  return groupedDevices.value.map((group) => group[group.length - 1]);
 });
+
+const filteredDevices = computed(() => {
+  return visibleDevices.value.filter((device) =>
+    selectedDevices.value.includes(device.field3)
+  );
+});
+
+const createChart = (canvasId, deviceCode) => {
+  const deviceData = groupedDevices.value.find(
+    (group) => group[0].field3 === deviceCode
+  );
+
+  if (!deviceData || deviceData.length === 0) return;
+
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  // Destroy existing graphs
+  if (chartInstances.value[deviceCode]) {
+    chartInstances.value[deviceCode].destroy();
+  }
+
+  const times = deviceData.map((d) =>
+    new Date(d.created_at).toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  );
+  const temperatures = deviceData.map((d) => d.field5);
+  const targetTemp = deviceData[0].field6;
+  const margin = deviceData[0].field7;
+
+  chartInstances.value[deviceCode] = new Chart.Chart(ctx, {
+    type: "line",
+    data: {
+      labels: times,
+      datasets: [
+        {
+          label: "Temperatura Atual",
+          data: temperatures,
+          borderColor: "#14b8a6",
+          backgroundColor: "rgba(20, 184, 166, 0.1)",
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: "Temperatura Ideal",
+          data: Array(times.length).fill(targetTemp),
+          borderColor: "#10b981",
+          borderWidth: 2,
+          borderDash: [5, 5],
+          fill: false,
+          pointRadius: 0,
+        },
+        {
+          label: "Margem Superior",
+          data: Array(times.length).fill(targetTemp + margin),
+          borderColor: "#f59e0b",
+          borderWidth: 1,
+          borderDash: [2, 2],
+          fill: false,
+          pointRadius: 0,
+        },
+        {
+          label: "Margem Inferior",
+          data: Array(times.length).fill(targetTemp - margin),
+          borderColor: "#f59e0b",
+          borderWidth: 1,
+          borderDash: [2, 2],
+          fill: false,
+          pointRadius: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+        },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          callbacks: {
+            label: function (context) {
+              return context.dataset.label + ": " + context.parsed.y + "°C";
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          ticks: {
+            callback: function (value) {
+              return value + "°C";
+            },
+          },
+        },
+        x: {
+          grid: {
+            display: false,
+          },
+        },
+      },
+      interaction: {
+        mode: "nearest",
+        axis: "x",
+        intersect: false,
+      },
+    },
+  });
+};
+
+const initCharts = async () => {
+  await nextTick();
+  filteredDevices.value.forEach((device) => {
+    createChart(`chart-${device.field3}`, device.field3);
+  });
+};
+
+function toggle() {
+  if (selectAllDevices.value) {
+    selectedDevices.value = [];
+  } else {
+    selectedDevices.value = visibleDevices.value.map((device) => device.field3);
+  }
+}
 </script>
 
 <template>
@@ -378,19 +528,32 @@ const visibleDevices = computed(() => {
           :max-width="300"
           v-model="selectedDevices"
           :items="
-            visibleDevices.map((device) => {
-              return {
-                title: device.field2,
-                subtitle: device.field3,
-              };
-            })
+            visibleDevices.map((device) => ({
+              title: device.field2,
+              subtitle: device.field3,
+            }))
           "
           item-title="title"
           item-value="subtitle"
           variant="outlined"
           density="compact"
         >
+          <template v-slot:prepend-item>
+            <v-list-item title="Selecionar todos" @click="toggle">
+              <template v-slot:prepend>
+                <v-checkbox-btn
+                  :color="selectSomeDevices ? 'indigo-darken-4' : undefined"
+                  :indeterminate="selectSomeDevices && !selectAllDevices"
+                  :model-value="selectAllDevices"
+                ></v-checkbox-btn>
+              </template>
+            </v-list-item>
+
+            <v-divider class="mt-2"></v-divider>
+          </template>
         </v-select>
+
+        <v-btn @click="initCharts()">Pesquisar</v-btn>
 
         <v-btn-toggle
           v-model="gridView"
@@ -416,13 +579,7 @@ const visibleDevices = computed(() => {
             : 'w-full flex flex-col gap-4'
         "
       >
-        <v-card
-          v-for="(item, index) in visibleDevices.filter((device) =>
-            selectedDevices.includes(device.field3)
-          )"
-          :key="index"
-          rounded="sm"
-        >
+        <v-card v-for="item in filteredDevices" :key="item.field3" rounded="sm">
           <v-card-item>
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2">
@@ -469,75 +626,48 @@ const visibleDevices = computed(() => {
                 : 'bg-amber-500'
             }`"
           >
-            <span
-              v-if="Math.abs(item.field5 - item.field6) > item.field7"
-              class="text-sm text-white"
-            >
-              {{
-                item.field5 > item.field6
-                  ? "Temperatura muito acima!"
-                  : "Temperatura muito abaixo!"
-              }}
-            </span>
-            <span
-              v-else-if="item.field5 > item.field6"
-              class="text-sm text-white"
-            >
-              Temperatura acima, mas dentro da margem!
-            </span>
-            <span
-              v-else-if="item.field5 < item.field6"
-              class="text-sm text-white"
-            >
-              Temperatura abaixo, porém dentro da margem!
+            <span class="text-sm text-white">
+              <template
+                v-if="Math.abs(item.field5 - item.field6) > item.field7"
+              >
+                {{
+                  item.field5 > item.field6
+                    ? "Temperatura muito acima!"
+                    : "Temperatura muito abaixo!"
+                }}
+              </template>
+              <template v-else-if="item.field5 > item.field6">
+                Temperatura acima, mas dentro da margem!
+              </template>
+              <template v-else>
+                Temperatura abaixo, porém dentro da margem!
+              </template>
             </span>
           </div>
 
           <div class="pa-4">
-            <!-- <v-sheet
-              border="dashed md"
-              color="red-lighten-4"
-              height="200"
-              rounded="lg"
-              width="100%"
-            >
-              <div class="h-[200px] flex justify-between pa-4">
-                <div class="flex flex-col gap-2">
-                  <h1 class="text-h5 font-weight-bold">
-                    Temperatura
-                    {{
-                      item.field5 === item.field6
-                        ? "ideal"
-                        : item.field5 < item.field6
-                        ? "abaixo do ideal"
-                        : "acima do ideal"
-                    }}
-                  </h1>
-
-                  <p v-if="item.field5 !== item.field6">
-                    {{ item.field5 < item.field6 ? "Aumente" : "Diminua" }}
-                    a temperatura para {{ item.field6 }}°
-                  </p>
-                </div>
-              </div>
-            </v-sheet> -->
+            <div style="height: 300px; position: relative">
+              <canvas :id="`chart-${item.field3}`"></canvas>
+            </div>
           </div>
         </v-card>
       </div>
+
       <div v-else class="flex items-center justify-center h-110">
         <v-empty-state
           icon="mdi-magnify"
           text="Tente selecionar pelo menos um aparelho ou entre em contato com o seu administrador."
           title="Nada foi encontrado"
-        ></v-empty-state>
+        />
       </div>
     </div>
+
     <div v-else class="flex items-center justify-center h-110">
       <v-empty-state
         icon="mdi-magnify"
         text="Tente filtrar novamente ou entre em contato com o seu administrador."
         title="Nada foi encontrado"
-      ></v-empty-state>
+      />
     </div>
   </PageStructure>
 </template>
