@@ -522,10 +522,9 @@ function toggle() {
       <div class="flex items-center justify-end gap-4">
         <v-select
           multiple
-          chips
           hide-details
           label="Selecione um aparelho"
-          :max-width="300"
+          :max-width="400"
           v-model="selectedDevices"
           :items="
             visibleDevices.map((device) => ({
@@ -550,6 +549,17 @@ function toggle() {
             </v-list-item>
 
             <v-divider class="mt-2"></v-divider>
+          </template>
+
+          <template v-slot:selection="{ item, index }">
+            <v-chip v-if="index < 2" :text="item.title"></v-chip>
+
+            <span
+              v-if="index === 2"
+              class="text-black text-caption align-self-center"
+            >
+              (+{{ selectedDevices.length - 2 }} outros)
+            </span>
           </template>
         </v-select>
 
