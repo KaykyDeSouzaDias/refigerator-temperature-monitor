@@ -32,6 +32,7 @@ const { data, pending, error, refresh } = await useGetAllDevice();
 // const deviceList = computed(() => data.value);
 const gridView = useState("gridView", () => "grid");
 const chartInstances = ref({});
+const hasSearched = ref(false);
 
 const selectedDevices = useState("selected", () => []);
 const selectAllDevices = computed(() => {
@@ -386,6 +387,14 @@ const filteredDevices = computed(() => {
   );
 });
 
+watch(selectedDevices, (newVal) => {
+  if (newVal.length > 0) {
+    hasSearched.value = false;
+  } else {
+    hasSearched.value = true;
+  }
+});
+
 const createChart = (canvasId, deviceCode) => {
   const deviceData = groupedDevices.value.find(
     (group) => group[0].field3 === deviceCode
@@ -501,6 +510,7 @@ const createChart = (canvasId, deviceCode) => {
 };
 
 const initCharts = async () => {
+  hasSearched.value = true;
   await nextTick();
   filteredDevices.value.forEach((device) => {
     createChart(`chart-${device.field3}`, device.field3);
@@ -510,6 +520,7 @@ const initCharts = async () => {
 function toggle() {
   if (selectAllDevices.value) {
     selectedDevices.value = [];
+    hasSearched.value = false;
   } else {
     selectedDevices.value = visibleDevices.value.map((device) => device.field3);
   }
@@ -563,7 +574,13 @@ function toggle() {
           </template>
         </v-select>
 
-        <v-btn @click="initCharts()">Pesquisar</v-btn>
+        <v-btn
+          :disabled="selectedDevices.length <= 0"
+          color="teal"
+          @click="initCharts()"
+        >
+          Gerar gráficos
+        </v-btn>
 
         <v-btn-toggle
           v-model="gridView"
@@ -656,9 +673,18 @@ function toggle() {
           </div>
 
           <div class="pa-4">
-            <div style="height: 300px; position: relative">
+            <div
+              v-if="selectedDevices.length > 0 && hasSearched"
+              style="height: 300px; position: relative"
+            >
               <canvas :id="`chart-${item.field3}`"></canvas>
             </div>
+            <v-empty-state
+              v-else
+              icon="mdi-chart-bell-curve-cumulative"
+              text="Tente gerar novamente ou entre em contato com o seu administrador."
+              title="Gráfico não encontrado"
+            />
           </div>
         </v-card>
       </div>
