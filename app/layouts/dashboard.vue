@@ -19,6 +19,13 @@ const items = ref([
   },
 ]);
 const selected = ref([router.currentRoute.value.fullPath]);
+
+watch(
+  () => router.currentRoute.value.fullPath,
+  (newVal) => {
+    selected.value = [newVal];
+  }
+);
 </script>
 
 <template>

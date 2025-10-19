@@ -28,6 +28,8 @@ definePageMeta({
 });
 
 const { data, pending, error, refresh } = await useGetAllDevice();
+const store = useDevice();
+const { selectedDeviceOtherPage } = storeToRefs(store);
 
 // const deviceList = computed(() => data.value);
 const gridView = useState("gridView", () => "grid");
@@ -385,6 +387,13 @@ const filteredDevices = computed(() => {
   return visibleDevices.value.filter((device) =>
     selectedDevices.value.includes(device.field3)
   );
+});
+
+onMounted(() => {
+  const formatted = toRaw(selectedDeviceOtherPage.value);
+  if (formatted) {
+    selectedDevices.value = [formatted.field3];
+  }
 });
 
 watch(selectedDevices, (newVal) => {
