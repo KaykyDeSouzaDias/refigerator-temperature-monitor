@@ -6,7 +6,7 @@ definePageMeta({
   layout: "dashboard",
 });
 
-const { data, pending, error, refresh } = await useGetAllDevice();
+const { data } = await useGetAllDevice();
 const store = useDeviceStore();
 const { selectedDeviceOtherPage } = storeToRefs(store);
 
