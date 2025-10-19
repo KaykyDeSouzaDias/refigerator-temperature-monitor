@@ -16,12 +16,6 @@ const hasSearched = ref(false);
 const canInitCharts = ref(false);
 
 const selectedDevices = useState("selected", () => []);
-const selectAllDevices = computed(() => {
-  return selectedDevices.value.length === visibleDevices.value.length;
-});
-const selectSomeDevices = computed(() => {
-  return selectedDevices.value.length > 0;
-});
 
 const groupedDevices = computed(() => {
   const map = {};
@@ -42,14 +36,14 @@ const visibleDevices = computed(() => {
 
 const filteredDevices = computed(() => {
   return visibleDevices.value.filter((device) =>
-    selectedDevices.value.includes(device.field3)
+    selectedDevices.value.includes(device.field2)
   );
 });
 
 onMounted(() => {
   const formatted = toRaw(selectedDeviceOtherPage.value);
   if (formatted) {
-    selectedDevices.value = [formatted.field3];
+    selectedDevices.value = [formatted.field2];
   }
 });
 
@@ -66,63 +60,18 @@ const initCharts = async () => {
   await nextTick();
   canInitCharts.value = true;
 };
-
-function toggle() {
-  if (selectAllDevices.value) {
-    selectedDevices.value = [];
-    hasSearched.value = false;
-  } else {
-    selectedDevices.value = visibleDevices.value.map((device) => device.field3);
-  }
-}
 </script>
 
 <template>
   <PageStructure title="Monitoramento">
     <div v-if="deviceList.length > 0" class="flex flex-col gap-4">
       <div class="flex items-center justify-end gap-4">
-        <v-select
-          multiple
-          hide-details
-          label="Selecione um aparelho"
+        <MultiSelect
           :max-width="400"
-          v-model="selectedDevices"
-          :items="
-            visibleDevices.map((device) => ({
-              title: device.field2,
-              subtitle: device.field3,
-            }))
-          "
-          item-title="title"
-          item-value="subtitle"
-          variant="outlined"
-          density="compact"
-        >
-          <template v-slot:prepend-item>
-            <v-list-item title="Selecionar todos" @click="toggle">
-              <template v-slot:prepend>
-                <v-checkbox-btn
-                  :color="selectSomeDevices ? 'indigo-darken-4' : undefined"
-                  :indeterminate="selectSomeDevices && !selectAllDevices"
-                  :model-value="selectAllDevices"
-                ></v-checkbox-btn>
-              </template>
-            </v-list-item>
-
-            <v-divider class="mt-2"></v-divider>
-          </template>
-
-          <template v-slot:selection="{ item, index }">
-            <v-chip v-if="index < 2" :text="item.title"></v-chip>
-
-            <span
-              v-if="index === 2"
-              class="text-black text-caption align-self-center"
-            >
-              (+{{ selectedDevices.length - 2 }} outros)
-            </span>
-          </template>
-        </v-select>
+          :selectedValues="selectedDevices"
+          :data="visibleDevices.map((device) => device.field2)"
+          :onChangeValue="(value) => (selectedDevices = value)"
+        />
 
         <v-btn
           :disabled="selectedDevices.length <= 0"

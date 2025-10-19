@@ -37,16 +37,6 @@ const visibleDevices = computed(() => {
   return groupedDevices.value.map((group) => group[group.length - 1]);
 });
 
-const selectAllDevices = computed(() => {
-  return (
-    filters.value.location.length ===
-    visibleDevices.value.map((device) => device.field4).length
-  );
-});
-const selectSomeDevices = computed(() => {
-  return filters.value.location.length > 0;
-});
-
 const filteredDevices = computed(() => {
   const searchFilter = filters.value.search.toLowerCase();
   const locationFilter = new Set(
@@ -69,25 +59,6 @@ const filteredDevices = computed(() => {
   });
 });
 
-async function reset() {
-  await fetch(
-    `https://api.thingspeak.com/channels/3100146/feeds.json?api_key=PTRQOAVX4RPVEOFU`,
-    {
-      method: "DELETE",
-    }
-  );
-}
-
-function toggle() {
-  if (selectAllDevices.value) {
-    filters.value.location = [];
-  } else {
-    filters.value.location = visibleDevices.value.map(
-      (device) => device.field4
-    );
-  }
-}
-
 async function goToDevice(device) {
   changeSelectedDevice(device);
   await navigateTo("/");
@@ -108,41 +79,11 @@ async function goToDevice(device) {
             hide-details
             single-line
           ></v-text-field>
-          <v-select
-            v-model="filters.location"
-            :items="visibleDevices.map((device) => device.field4)"
-            label="Localização"
-            clearable
-            multiple
-            variant="outlined"
-            density="compact"
-            hide-details
-          >
-            <template v-slot:prepend-item>
-              <v-list-item title="Selecionar todos" @click="toggle">
-                <template v-slot:prepend>
-                  <v-checkbox-btn
-                    :color="selectSomeDevices ? 'indigo-darken-4' : undefined"
-                    :indeterminate="selectSomeDevices && !selectAllDevices"
-                    :model-value="selectAllDevices"
-                  ></v-checkbox-btn>
-                </template>
-              </v-list-item>
-
-              <v-divider class="mt-2"></v-divider>
-            </template>
-
-            <template v-slot:selection="{ item, index }">
-              <v-chip v-if="index < 2" :text="item.title"></v-chip>
-
-              <span
-                v-if="index === 2"
-                class="text-black text-caption align-self-center"
-              >
-                (+{{ filters.location.length - 2 }} outros)
-              </span>
-            </template>
-          </v-select>
+          <MultiSelect
+            :selectedValues="filters.location"
+            :data="visibleDevices.map((device) => device.field4)"
+            :onChangeValue="(value) => (filters.location = value)"
+          />
         </div>
 
         <v-sheet border rounded>
