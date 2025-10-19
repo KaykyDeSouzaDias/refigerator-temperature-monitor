@@ -1,4 +1,4 @@
-export const useDevice = defineStore("device", () => {
+export const useDeviceStore = defineStore("device", () => {
   const selectedDeviceOtherPage = ref();
 
   function changeSelectedDevice(value: any) {
