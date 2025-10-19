@@ -8,20 +8,6 @@ import {
   LayoutGrid,
   Rows3,
 } from "lucide-vue-next";
-import * as Chart from "chart.js";
-
-// Register Chart.js components
-Chart.Chart.register(
-  Chart.LineController,
-  Chart.LineElement,
-  Chart.PointElement,
-  Chart.LinearScale,
-  Chart.CategoryScale,
-  Chart.Title,
-  Chart.Tooltip,
-  Chart.Legend,
-  Chart.Filler
-);
 
 definePageMeta({
   layout: "dashboard",
@@ -33,8 +19,8 @@ const { selectedDeviceOtherPage } = storeToRefs(store);
 
 const deviceList = computed(() => data.value);
 const gridView = useState("gridView", () => "grid");
-const chartInstances = ref({});
 const hasSearched = ref(false);
+const canInitCharts = ref(false);
 
 const selectedDevices = useState("selected", () => []);
 const selectAllDevices = computed(() => {
@@ -82,126 +68,10 @@ watch(selectedDevices, (newVal) => {
   }
 });
 
-const createChart = (canvasId, deviceCode) => {
-  const deviceData = groupedDevices.value.find(
-    (group) => group[0].field3 === deviceCode
-  );
-
-  if (!deviceData || deviceData.length === 0) return;
-
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-
-  // Destroy existing graphs
-  if (chartInstances.value[deviceCode]) {
-    chartInstances.value[deviceCode].destroy();
-  }
-
-  const times = deviceData.map((d) =>
-    new Date(d.created_at).toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  );
-  const temperatures = deviceData.map((d) => d.field5);
-  const targetTemp = deviceData[0].field6;
-  const margin = deviceData[0].field7;
-
-  chartInstances.value[deviceCode] = new Chart.Chart(ctx, {
-    type: "line",
-    data: {
-      labels: times,
-      datasets: [
-        {
-          label: "Temperatura Atual",
-          data: temperatures,
-          borderColor: "#14b8a6",
-          backgroundColor: "rgba(20, 184, 166, 0.1)",
-          borderWidth: 3,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-        },
-        {
-          label: "Temperatura Ideal",
-          data: Array(times.length).fill(targetTemp),
-          borderColor: "#10b981",
-          borderWidth: 2,
-          borderDash: [5, 5],
-          fill: false,
-          pointRadius: 0,
-        },
-        {
-          label: "Margem Superior",
-          data: Array(times.length).fill(targetTemp + margin),
-          borderColor: "#f59e0b",
-          borderWidth: 1,
-          borderDash: [2, 2],
-          fill: false,
-          pointRadius: 0,
-        },
-        {
-          label: "Margem Inferior",
-          data: Array(times.length).fill(targetTemp - margin),
-          borderColor: "#f59e0b",
-          borderWidth: 1,
-          borderDash: [2, 2],
-          fill: false,
-          pointRadius: 0,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: "bottom",
-        },
-        tooltip: {
-          mode: "index",
-          intersect: false,
-          callbacks: {
-            label: function (context) {
-              return context.dataset.label + ": " + context.parsed.y + "°C";
-            },
-          },
-        },
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          ticks: {
-            callback: function (value) {
-              return value + "°C";
-            },
-          },
-        },
-        x: {
-          grid: {
-            display: false,
-          },
-        },
-      },
-      interaction: {
-        mode: "nearest",
-        axis: "x",
-        intersect: false,
-      },
-    },
-  });
-};
-
 const initCharts = async () => {
   hasSearched.value = true;
   await nextTick();
-  filteredDevices.value.forEach((device) => {
-    createChart(`chart-${device.field3}`, device.field3);
-  });
+  canInitCharts.value = true;
 };
 
 function toggle() {
@@ -360,17 +230,11 @@ function toggle() {
           </div>
 
           <div class="pa-4">
-            <div
-              v-if="selectedDevices.length > 0 && hasSearched"
-              style="height: 300px; position: relative"
-            >
-              <canvas :id="`chart-${item.field3}`"></canvas>
-            </div>
-            <v-empty-state
-              v-else
-              icon="mdi-chart-bell-curve-cumulative"
-              text="Tente gerar novamente ou entre em contato com o seu administrador."
-              title="Gráfico não encontrado"
+            <DeviceChart
+              :isVisible="selectedDevices.length > 0 && hasSearched"
+              :canInit="canInitCharts"
+              :currentDevice="item"
+              :groupedDevices="groupedDevices"
             />
           </div>
         </v-card>
