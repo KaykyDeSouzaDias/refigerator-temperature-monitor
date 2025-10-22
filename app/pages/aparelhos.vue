@@ -13,6 +13,8 @@ const headers = ref([
   { title: "Código", key: "field3" },
   { title: "Localização", key: "field4" },
   { title: "Temperatura (°C)", key: "field5" },
+  { title: "Temperatura Ideal (°C)", key: "field6" },
+  { title: "Margem Superior/Inferior (°C)", key: "field7" },
   { title: "", key: "actions", align: "end", sortable: false },
 ]);
 const filters = ref({
@@ -104,6 +106,14 @@ async function goToDevice(device) {
                   <v-icon color="medium-emphasis"></v-icon>
                 </template>
               </v-chip>
+            </template>
+
+            <template v-slot:item.field5="{ item }">
+              {{ item.field5 ? parseFloat(item.field5).toFixed(2) : "" }}
+            </template>
+
+            <template v-slot:item.field7="{ item }">
+              {{ item.field7 ? parseFloat(item.field7).toFixed(2) : "" }}
             </template>
 
             <template v-slot:item.actions="{ item }">

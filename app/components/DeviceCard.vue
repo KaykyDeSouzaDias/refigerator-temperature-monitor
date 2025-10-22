@@ -56,7 +56,9 @@ const props = defineProps<{
               />
               <Thermometer v-else :size="18" />
             </template>
-            <span class="text-xs font-semibold"> {{ item.field5 }}° </span>
+            <span class="text-xs font-semibold">
+              {{ parseFloat(item.field5.toString()).toFixed(2) }}°
+            </span>
           </v-chip>
         </div>
       </v-card-item>
