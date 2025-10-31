@@ -6,7 +6,7 @@ definePageMeta({
   layout: "dashboard",
 });
 
-const { data } = await useGetAllDevice();
+const { data, refresh } = await useGetAllDevice();
 const store = useDeviceStore();
 const { selectedDeviceOtherPage } = storeToRefs(store);
 
@@ -14,6 +14,8 @@ const deviceList = computed(() => data.value);
 const gridView = useState("gridView", () => "grid");
 const hasSearched = ref(false);
 const canInitCharts = ref(false);
+
+const intervalId = ref(0);
 
 const selectedDevices = useState("selected", () => []);
 
@@ -44,6 +46,17 @@ onMounted(() => {
   const formatted = toRaw(selectedDeviceOtherPage.value);
   if (formatted) {
     selectedDevices.value = [formatted.field2];
+  }
+  intervalId.value = setInterval(() => {
+    if (selectedDevices.value.length > 0) {
+      refresh();
+    }
+  }, 1000);
+});
+
+onBeforeUnmount(() => {
+  if (intervalId.value) {
+    clearInterval(intervalId.value);
   }
 });
 
