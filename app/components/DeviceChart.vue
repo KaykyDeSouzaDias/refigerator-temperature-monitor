@@ -91,7 +91,7 @@ function createChart() {
         },
         {
           label: "Margem Superior",
-          data: Array(times.length).fill(targetTemp + margin),
+          data: Array(times.length).fill(margin),
           borderColor: "#f59e0b",
           borderWidth: 1,
           borderDash: [2, 2],
@@ -100,7 +100,7 @@ function createChart() {
         },
         {
           label: "Margem Inferior",
-          data: Array(times.length).fill(targetTemp - margin),
+          data: Array(times.length).fill(margin),
           borderColor: "#f59e0b",
           borderWidth: 1,
           borderDash: [2, 2],
