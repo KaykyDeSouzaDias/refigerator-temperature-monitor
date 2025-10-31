@@ -50,6 +50,7 @@ onMounted(() => {
   intervalId.value = setInterval(() => {
     if (selectedDevices.value.length > 0) {
       refresh();
+      initCharts();
     }
   }, 1000);
 });
